@@ -14,8 +14,23 @@ datasource db {
 }
 
 model Roles {
-  id   Int    @id @default(autoincrement())
-  name String
+  id    Int     @id @default(autoincrement())
+  name  String
+  Users Users[]
 
   @@map("roles")
+}
+
+model Users {
+  id           Int    @id @default(autoincrement())
+  role_id      Int
+  name         String
+  email        String @unique
+  address      String
+  phone_number String @unique
+  password     String
+
+  Roles Roles @relation(fields: [role_id], references: [id])
+
+  @@map("users")
 }
