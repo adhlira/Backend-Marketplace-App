@@ -30,7 +30,21 @@ model Users {
   phone_number String @unique
   password     String
 
-  Roles Roles @relation(fields: [role_id], references: [id])
+  Roles  Roles    @relation(fields: [role_id], references: [id])
+  Tokens Tokens[]
 
   @@map("users")
+}
+
+model Tokens {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  token      String
+  expired_at DateTime
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Users Users @relation(fields: [user_id], references: [id])
+
+  @@map("tokens")
 }
