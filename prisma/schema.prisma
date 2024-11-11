@@ -30,8 +30,9 @@ model Users {
   phone_number String @unique
   password     String
 
-  Roles  Roles    @relation(fields: [role_id], references: [id])
-  Tokens Tokens[]
+  Roles    Roles      @relation(fields: [role_id], references: [id])
+  Tokens   Tokens[]
+  Products Products[]
 
   @@map("users")
 }
@@ -47,4 +48,82 @@ model Tokens {
   Users Users @relation(fields: [user_id], references: [id])
 
   @@map("tokens")
+}
+
+model Categories {
+  id       Int        @id @default(autoincrement())
+  name     String     @unique
+  Products Products[]
+
+  @@map("categories")
+}
+
+model Sizes {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  ProductSize ProductSize[]
+
+  @@map("sizes")
+}
+
+model Colors {
+  id           Int            @id @default(autoincrement())
+  name         String
+  ColorProduct ColorProduct[]
+
+  @@map("colors")
+}
+
+model Products {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  category_id Int
+  name        String
+  price       Float
+  quantity    Int
+  description String   @db.Text
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Users        Users          @relation(fields: [user_id], references: [id])
+  Categories   Categories     @relation(fields: [category_id], references: [id])
+  ProductSize  ProductSize[]
+  ColorProduct ColorProduct[]
+  ImageProduct ImageProduct[]
+
+  @@map("products")
+}
+
+model ProductSize {
+  product_id Int
+  size_id    Int
+
+  Products Products @relation(fields: [product_id], references: [id])
+  Sizes    Sizes    @relation(fields: [size_id], references: [id])
+
+  @@id([product_id, size_id])
+  @@map("product_size")
+}
+
+model ColorProduct {
+  product_id Int
+  color_id   Int
+
+  Products Products @relation(fields: [product_id], references: [id])
+  Colors   Colors   @relation(fields: [color_id], references: [id])
+
+  @@id([product_id, color_id])
+  @@map("color_product")
+}
+
+model ImageProduct {
+  id         Int      @id @default(autoincrement())
+  product_id Int
+  image_url  String
+  created_at DateTime
+  updated_at DateTime
+
+  Products Products @relation(fields: [product_id], references: [id])
+
+  @@map("image_product")
 }
