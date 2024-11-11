@@ -14,9 +14,10 @@ datasource db {
 }
 
 model Roles {
-  id    Int     @id @default(autoincrement())
-  name  String
-  Users Users[]
+  id             Int              @id @default(autoincrement())
+  name           String
+  Users          Users[]
+  PermissionRole PermissionRole[]
 
   @@map("roles")
 }
@@ -126,4 +127,23 @@ model ImageProduct {
   Products Products @relation(fields: [product_id], references: [id])
 
   @@map("image_product")
+}
+
+model Permissions {
+  id             Int              @id @default(autoincrement())
+  name           String
+  PermissionRole PermissionRole[]
+
+  @@map("permissions")
+}
+
+model PermissionRole {
+  permission_id Int
+  role_id       Int
+
+  Permissions Permissions @relation(fields: [permission_id], references: [id])
+  Roles       Roles       @relation(fields: [role_id], references: [id])
+
+  @@id([permission_id, role_id])
+  @@map("permission_role")
 }
