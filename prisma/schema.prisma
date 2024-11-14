@@ -41,7 +41,7 @@ model Users {
 model Tokens {
   id         Int      @id @default(autoincrement())
   user_id    Int
-  token      String
+  token      String   @unique
   expired_at DateTime
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -121,8 +121,8 @@ model ImageProduct {
   id         Int      @id @default(autoincrement())
   product_id Int
   image_url  String
-  created_at DateTime
-  updated_at DateTime
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   Products Products @relation(fields: [product_id], references: [id])
 
