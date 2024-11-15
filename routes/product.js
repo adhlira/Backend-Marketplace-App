@@ -80,40 +80,87 @@ router.post("/product", authorizePermission(Permission.ADD_PRODUCT), upload.sing
       },
     });
     res.status(200).json({ message: "Added Data Product successfully", product });
-    // if (req.files && req.files.length > 0) {
-    //   await Promise.all(
-    //     req.files.map(async (file, index) => {
-    //       let fileName;
-    //       switch (+category_id) {
-    //         case 1:
-    //           fileName = `product_${product.id}_${index}.jpg`;
-    //           break;
-    //         case 2:
-    //           fileName = `product_${product.id}_w_${index}.jpg`;
-    //           break;
-    //         case 3:
-    //           fileName = `product_${product.id}_k_${index}.jpg`;
-    //           break;
-    //         case 4:
-    //           fileName = `cp${product.id}_${index}.jpg`;
-    //           break;
-    //         default:
-    //           fileName = ""; // handle the default case appropriately
-    //           break;
-    //       }
+  } catch (error) {
+    console.log("Error saat menyimpan data: ", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
-    //       await tx.productImage.createMany({
-    //         data: {
-    //           product_id: product.id,
-    //           image_url: image_url,
-    //         },
-    //       });
+router.get("/product/:id", authorizePermission(Permission.READ_PRODUCT), async (req, res) => {
+  try {
+    const product = await prisma.products.findFirst({
+      where: { id: +req.params.id },
+      include: {
+        ProductSize: {
+          select: {
+            Sizes: { select: { name: true } },
+          },
+        },
+        ColorProduct: {
+          select: {
+            Colors: { select: { name: true } },
+          },
+        },
+        ImageProduct: {
+          select: { image_url: true },
+        },
+        Categories: { select: { name: true } },
+      },
+    });
+    if (isNaN(req.params.id)) {
+      res.status(400).json({ message: "Invalid ID" });
+    } else if (!product) {
+      res.status(404).json({ message: "Product Not Found" });
+    } else {
+      res.status(200).json(product);
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-    //       const newPath = path.join("public/images", fileName);
-    //       fs.renameSync(file.path, newPath);
-    //     })
-    //   );
-    // }
+router.put("/product/:id", authorizePermission(Permission.EDIT_PRODUCT), upload.single("image"), async (req, res) => {
+  const { category_id, name, price, quantity, description } = req.body;
+  const user = await prisma.tokens.findFirst({ where: { token: req.headers.authorization } });
+  try {
+    const product = await prisma.products.update({
+      where: { id: +req.params.id },
+      data: {
+        name: name,
+      },
+    });
+    const sizeId = await prisma.productSize.findFirst({ where: { product_id: product.id } });
+    await prisma.productSize.update({
+      where: {
+        product_id_size_id: {
+          product_id: product.id,
+          size_id: sizeId.size_id,
+        },
+      },
+      data: req.body,
+    });
+    const colorId = await prisma.colorProduct.findFirst({ where: { product_id: product.id } });
+    await prisma.colorProduct.update({
+      where: {
+        product_id_color_id: {
+          product_id: product.id,
+          color_id: colorId.color_id,
+        },
+      },
+      data: req.body,
+    });
+    const oldImage = await prisma.imageProduct.findFirst({ where: { product_id: +req.params.id } });
+    if (oldImage && req.file) {
+      await prisma.imageProduct.delete({ where: { product_id: +req.params.id } });
+    }
+    const image_url = req.file ? `${req.protocol}://${req.get("host")}/public/images/${req.file.filename}` : "https://example.com/default-image.png";
+    await prisma.imageProduct.create({
+      data: {
+        product_id: +product.id,
+        image_url: image_url,
+      },
+    });
+    res.status(200).json({ message: "Updated Data Product successfully", product });
   } catch (error) {
     console.log("Error saat menyimpan data: ", error);
     res.status(500).json({ error: error.message });

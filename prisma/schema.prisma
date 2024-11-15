@@ -118,7 +118,6 @@ model ColorProduct {
 }
 
 model ImageProduct {
-  id         Int      @id @default(autoincrement())
   product_id Int
   image_url  String
   created_at DateTime @default(now())
@@ -126,6 +125,7 @@ model ImageProduct {
 
   Products Products @relation(fields: [product_id], references: [id])
 
+  @@id([product_id])
   @@map("image_product")
 }
 
