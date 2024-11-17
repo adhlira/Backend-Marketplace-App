@@ -174,4 +174,39 @@ router.put("/product/:id", authorizePermission(Permission.EDIT_PRODUCT), upload.
   }
 });
 
+router.get("/products/user", authorizePermission(Permission.BROWSE_PRODUCT), async (req, res) => {
+  const user = await prisma.tokens.findFirst({ where: { token: req.headers.authorization } });
+  try {
+    const products = await prisma.products.findMany({
+      where: { user_id: user.user_id },
+      include: {
+        ColorProduct: {
+          select: {
+            Colors: {
+              select: { name: true },
+            },
+          },
+        },
+        ProductSize: {
+          select: {
+            Sizes: {
+              select: { name: true },
+            },
+          },
+        },
+        ImageProduct: {
+          select: { image_url: true },
+        },
+      },
+    });
+    if (products.length == 0) {
+      res.status(404).json({ message: "Data Product is empty" });
+    } else {
+      res.status(200).json({ message: "Data Product : ", products });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
