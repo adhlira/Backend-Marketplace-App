@@ -120,13 +120,16 @@ router.get("/product/:id", authorizePermission(Permission.READ_PRODUCT), async (
 });
 
 router.put("/product/:id", authorizePermission(Permission.EDIT_PRODUCT), upload.single("image"), async (req, res) => {
-  const { category_id, name, price, quantity, description } = req.body;
-  const user = await prisma.tokens.findFirst({ where: { token: req.headers.authorization } });
+  const { category_id, name, price, quantity, description, size_id, color_id } = req.body;
   try {
     const product = await prisma.products.update({
       where: { id: +req.params.id },
       data: {
         name: name,
+        category_id: +category_id,
+        price: +price,
+        quantity: +quantity,
+        description: description,
       },
     });
     const sizeId = await prisma.productSize.findFirst({ where: { product_id: product.id } });
@@ -137,7 +140,9 @@ router.put("/product/:id", authorizePermission(Permission.EDIT_PRODUCT), upload.
           size_id: sizeId.size_id,
         },
       },
-      data: req.body,
+      data: {
+        size_id: +size_id,
+      },
     });
     const colorId = await prisma.colorProduct.findFirst({ where: { product_id: product.id } });
     await prisma.colorProduct.update({
@@ -147,19 +152,21 @@ router.put("/product/:id", authorizePermission(Permission.EDIT_PRODUCT), upload.
           color_id: colorId.color_id,
         },
       },
-      data: req.body,
+      data: {
+        color_id: +color_id,
+      },
     });
     const oldImage = await prisma.imageProduct.findFirst({ where: { product_id: +req.params.id } });
     if (oldImage && req.file) {
       await prisma.imageProduct.delete({ where: { product_id: +req.params.id } });
+      const image_url = `${req.protocol}://${req.get("host")}/public/images/${req.file.filename}`;
+      await prisma.imageProduct.create({
+        data: {
+          product_id: +product.id,
+          image_url: image_url,
+        },
+      });
     }
-    const image_url = req.file ? `${req.protocol}://${req.get("host")}/public/images/${req.file.filename}` : "https://example.com/default-image.png";
-    await prisma.imageProduct.create({
-      data: {
-        product_id: +product.id,
-        image_url: image_url,
-      },
-    });
     res.status(200).json({ message: "Updated Data Product successfully", product });
   } catch (error) {
     console.log("Error saat menyimpan data: ", error);
