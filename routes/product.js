@@ -3,6 +3,7 @@ import { Router } from "express";
 import { Permission } from "../authorization.js";
 import { authToken, authorizePermission } from "../authenticate_token.js";
 import upload from "../multer_config.js";
+import fs from "fs/promises";
 import path from "path";
 
 const prisma = new PrismaClient();
@@ -158,6 +159,10 @@ router.put("/product/:id", authorizePermission(Permission.EDIT_PRODUCT), upload.
     });
     const oldImage = await prisma.imageProduct.findFirst({ where: { product_id: +req.params.id } });
     if (oldImage && req.file) {
+      const imageUrl = oldImage.image_url;
+      const imageName = path.basename(new URL(imageUrl).pathname);
+      const imagePath = path.join("public", "images", imageName);
+      await fs.unlink(imagePath);
       await prisma.imageProduct.delete({ where: { product_id: +req.params.id } });
       const image_url = `${req.protocol}://${req.get("host")}/public/images/${req.file.filename}`;
       await prisma.imageProduct.create({
@@ -204,6 +209,60 @@ router.get("/products/user", authorizePermission(Permission.BROWSE_PRODUCT), asy
     } else {
       res.status(200).json({ message: "Data Product : ", products });
     }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/products-category/:id", authorizePermission(Permission.BROWSE_PRODUCT), async (req, res) => {
+  const id = +req.params.id;
+  try {
+    const products = await prisma.products.findMany({
+      where: { category_id: id },
+      include: {
+        ProductSize: {
+          select: {
+            Sizes: { select: { name: true } },
+          },
+        },
+        ColorProduct: {
+          select: {
+            Colors: { select: { name: true } },
+          },
+        },
+        ImageProduct: {
+          select: { image_url: true },
+        },
+      },
+    });
+    if (isNaN(id)) {
+      res.status(400).json({ message: "Category ID Invalid" });
+    } else if (products.length == 0) {
+      res.status(404).json({ message: "Product not found" });
+    } else {
+      res.status(200).json({ message: "Data Product : ", products });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.delete("/product/:id", authorizePermission(Permission.DELETE_PRODUCT), async (req, res) => {
+  try {
+    const product = await prisma.products.findFirst({ where: { id: +req.params.id } });
+
+    await prisma.productSize.deleteMany({ where: { product_id: product.id } });
+    await prisma.colorProduct.deleteMany({ where: { product_id: product.id } });
+
+    const oldImage = await prisma.imageProduct.findFirst({ where: { product_id: product.id } });
+    const imageUrl = oldImage.image_url;
+    const imageName = path.basename(new URL(imageUrl).pathname);
+    const imagePath = path.join("public", "images", imageName);
+    await fs.unlink(imagePath);
+    await prisma.imageProduct.deleteMany({ where: { product_id: product.id } });
+
+    await prisma.products.delete({ where: { id: +req.params.id } });
+    res.status(200).json({ message: "Data product deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
