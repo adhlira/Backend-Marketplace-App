@@ -34,6 +34,7 @@ model Users {
   Roles    Roles      @relation(fields: [role_id], references: [id])
   Tokens   Tokens[]
   Products Products[]
+  Cart     Cart[]
 
   @@map("users")
 }
@@ -91,6 +92,7 @@ model Products {
   ProductSize  ProductSize[]
   ColorProduct ColorProduct[]
   ImageProduct ImageProduct[]
+  Cart         Cart[]
 
   @@map("products")
 }
@@ -146,4 +148,19 @@ model PermissionRole {
 
   @@id([permission_id, role_id])
   @@map("permission_role")
+}
+
+model Cart {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  product_id Int
+  quantity   Int
+  total      Float
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Users    Users    @relation(fields: [user_id], references: [id])
+  Products Products @relation(fields: [product_id], references: [id])
+
+  @@map("cart")
 }
