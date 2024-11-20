@@ -64,6 +64,7 @@ model Sizes {
   id          Int           @id @default(autoincrement())
   name        String        @unique
   ProductSize ProductSize[]
+  Cart        Cart[]
 
   @@map("sizes")
 }
@@ -72,6 +73,7 @@ model Colors {
   id           Int            @id @default(autoincrement())
   name         String
   ColorProduct ColorProduct[]
+  Cart         Cart[]
 
   @@map("colors")
 }
@@ -154,6 +156,8 @@ model Cart {
   id         Int      @id @default(autoincrement())
   user_id    Int
   product_id Int
+  size_id    Int
+  color_id   Int
   quantity   Int
   total      Float
   created_at DateTime @default(now())
@@ -161,6 +165,8 @@ model Cart {
 
   Users    Users    @relation(fields: [user_id], references: [id])
   Products Products @relation(fields: [product_id], references: [id])
+  Sizes    Sizes    @relation(fields: [size_id], references: [id])
+  Colors   Colors   @relation(fields: [color_id], references: [id])
 
   @@map("cart")
 }

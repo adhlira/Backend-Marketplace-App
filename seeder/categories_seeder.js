@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 const seedCategories = async () => {
   try {
     await prisma.categories.createMany({
-      data: [{ name: "Kemeja" }, { name: "Baju" }, { name: "Celana Panjang" }, { name: "Celana Pendek" }, { name: "Jaket" }],
+      data: [{ name: "Kemeja" }, { name: "Celana Panjang" }, { name: "Jaket" }, { name: "Rok" }, { name: "Kaos" }, { name: "Sepatu" }, { name: "Tas" }, { name: "Aksesoris" }, { name: "Topi" }, { name: "Sweater" }],
     });
   } catch (error) {
     console.log("Error seeding data categories : ", error);

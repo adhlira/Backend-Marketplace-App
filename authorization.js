@@ -4,12 +4,17 @@ export const Role = {
 };
 
 export const Permission = {
-  BROWSE_CATEGORIES: "browse_categories",
-  READ_CATEGORIES: "read_categories",
+  BROWSE_CATEGORIES: "browse categories",
+  READ_CATEGORIES: "read categories",
 
-  BROWSE_PRODUCT: "browse_product",
-  READ_PRODUCT: "read_product",
-  ADD_PRODUCT: "add_product",
-  EDIT_PRODUCT: "edit_product",
-  DELETE_PRODUCT: "delete_product",
+  BROWSE_PRODUCT: "browse product",
+  READ_PRODUCT: "read product",
+  ADD_PRODUCT: "add product",
+  EDIT_PRODUCT: "edit product",
+  DELETE_PRODUCT: "delete product",
+
+  BROWSE_CART: "browse cart",
+  ADD_CART: "add cart",
+  EDIT_CART: "edit cart",
+  DELETE_CART: "delete cart",
 };

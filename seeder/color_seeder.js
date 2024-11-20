@@ -5,15 +5,17 @@ const prisma = new PrismaClient();
 
 const colorSeeder = async () => {
   try {
-     const uniqueValues = new Set();
-     while (uniqueValues.size < 5) {
-       await prisma.colors.createMany({
-         data: {
-           name: faker.color.human(),
-         },
-       });
-       // uniqueValues.add(faker.commerce.product());
-     }
+    for (let i = 0; i < 20; i++) {
+      const colorName = faker.color.human();
+      const nameExist = await prisma.colors.findFirst({ where: { name: colorName } });
+      if (nameExist) {
+        break;
+      } else {
+        await prisma.colors.create({
+          data: { name: colorName },
+        });
+      }
+    }
   } catch (error) {
     console.log("Error seeding data : ", error);
   }
