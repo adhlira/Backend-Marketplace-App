@@ -47,7 +47,7 @@ router.get("/products", authorizePermission(Permission.BROWSE_PRODUCT), async (r
   }
 });
 
-router.post("/product", authorizePermission(Permission.ADD_PRODUCT), upload.single("image"), async (req, res) => {
+router.post("/product", upload.array("images", 9), authorizePermission(Permission.ADD_PRODUCT),  async (req, res) => {
   const { category_id, name, price, quantity, description, size_id, color_id } = req.body;
   const user = await prisma.tokens.findFirst({ where: { token: req.headers.authorization } });
   try {
@@ -73,11 +73,17 @@ router.post("/product", authorizePermission(Permission.ADD_PRODUCT), upload.sing
         color_id: +color_id,
       },
     });
-    const image_url = req.file ? `${req.protocol}://${req.get("host")}/public/images/${req.file.filename}` : "https://example.com/default-image.png";
-    await prisma.imageProduct.create({
+    // const image_url = req.file ? `${req.protocol}://${req.get("host")}/public/images/${req.file.filename}` : "https://example.com/default-image.png";
+    const test = req.files.map((file) => {
+      `${req.protocol}://${req.get("host")}/public/images/${file.filename}`;
+    });
+    console.log(req.files.filename);
+    await prisma.imageProduct.createMany({
       data: {
         product_id: +product.id,
-        image_url: image_url,
+        image_url: req.files.map((file) => {
+          `${req.protocol}://${req.get("host")}/public/images/${file.filename}`;
+        }),
       },
     });
     res.status(200).json({ message: "Added Data Product successfully", product });
