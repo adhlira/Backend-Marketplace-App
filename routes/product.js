@@ -47,7 +47,7 @@ router.get("/products", authorizePermission(Permission.BROWSE_PRODUCT), async (r
   }
 });
 
-router.post("/product", upload.array("images", 9), authorizePermission(Permission.ADD_PRODUCT),  async (req, res) => {
+router.post("/product", upload.fields([{ name: "images", maxCount: 9 }]), authorizePermission(Permission.ADD_PRODUCT), async (req, res) => {
   const { category_id, name, price, quantity, description, size_id, color_id } = req.body;
   const user = await prisma.tokens.findFirst({ where: { token: req.headers.authorization } });
   try {
@@ -61,69 +61,67 @@ router.post("/product", upload.array("images", 9), authorizePermission(Permissio
         description: description,
       },
     });
+
     await prisma.productSize.create({
       data: {
-        product_id: +product.id,
+        product_id: product.id,
         size_id: +size_id,
       },
     });
+
     await prisma.colorProduct.create({
       data: {
         product_id: product.id,
         color_id: +color_id,
       },
     });
-    // const image_url = req.file ? `${req.protocol}://${req.get("host")}/public/images/${req.file.filename}` : "https://example.com/default-image.png";
-    const test = req.files.map((file) => {
-      `${req.protocol}://${req.get("host")}/public/images/${file.filename}`;
-    });
-    console.log(req.files.filename);
-    await prisma.imageProduct.createMany({
-      data: {
-        product_id: +product.id,
-        image_url: req.files.map((file) => {
-          `${req.protocol}://${req.get("host")}/public/images/${file.filename}`;
-        }),
-      },
+
+    req.files.map(async (file) => {
+      await prisma.imageProduct.createMany({
+        data: {
+          product_id: product.id,
+          image_url: file.filename,
+        },
+      });
     });
     res.status(200).json({ message: "Added Data Product successfully", product });
   } catch (error) {
     console.log("Error saat menyimpan data: ", error);
     res.status(500).json({ error: error.message });
   }
-});
 
-router.get("/product/:id", authorizePermission(Permission.READ_PRODUCT), async (req, res) => {
-  try {
-    const product = await prisma.products.findFirst({
-      where: { id: +req.params.id },
-      include: {
-        ProductSize: {
-          select: {
-            Sizes: { select: { name: true } },
+  router.get("/product/:id", authorizePermission(Permission.READ_PRODUCT), async (req, res) => {
+    try {
+      const product = await prisma.products.findFirst({
+        where: { id: +req.params.id },
+        include: {
+          ProductSize: {
+            select: {
+              Sizes: { select: { name: true } },
+            },
           },
-        },
-        ColorProduct: {
-          select: {
-            Colors: { select: { name: true } },
+          ColorProduct: {
+            select: {
+              Colors: { select: { name: true } },
+            },
           },
+          ImageProduct: {
+            select: { image_url: true },
+          },
+          Categories: { select: { name: true } },
         },
-        ImageProduct: {
-          select: { image_url: true },
-        },
-        Categories: { select: { name: true } },
-      },
-    });
-    if (isNaN(req.params.id)) {
-      res.status(400).json({ message: "Invalid ID" });
-    } else if (!product) {
-      res.status(404).json({ message: "Product Not Found" });
-    } else {
-      res.status(200).json(product);
+      });
+      if (isNaN(req.params.id)) {
+        res.status(400).json({ message: "Invalid ID" });
+      } else if (!product) {
+        res.status(404).json({ message: "Product Not Found" });
+      } else {
+        res.status(200).json(product);
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  });
 });
 
 router.put("/product/:id", authorizePermission(Permission.EDIT_PRODUCT), upload.single("image"), async (req, res) => {

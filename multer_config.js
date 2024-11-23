@@ -6,12 +6,20 @@ const storage = multer.diskStorage({
     cb(null, "public/images"); // Lokasi penyimpanan gambar
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname)); // Format nama file
+    cb(null, `${Date.now()}-${file.originalname}`);
   },
 });
 
-const upload = multer({ storage });
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only .jpeg, .jpg, and .png files are allowed!"), false);
+  }
+};
+
+const upload = multer({ storage, fileFilter });
 
 // const uploadMiddleware = (req, res, next) => {
 //   // Use multer upload instance

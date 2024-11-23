@@ -129,7 +129,7 @@ model ImageProduct {
 
   Products Products @relation(fields: [product_id], references: [id])
 
-  @@id([product_id])
+  @@id([product_id, image_url])
   @@map("image_product")
 }
 
