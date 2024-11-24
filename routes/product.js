@@ -256,11 +256,11 @@ router.delete("/product/:id", authorizePermission(Permission.DELETE_PRODUCT), as
     await prisma.productSize.deleteMany({ where: { product_id: product.id } });
     await prisma.colorProduct.deleteMany({ where: { product_id: product.id } });
 
-    const oldImage = await prisma.imageProduct.findFirst({ where: { product_id: product.id } });
-    const imageUrl = oldImage.image_url;
-    const imageName = path.basename(new URL(imageUrl).pathname);
-    const imagePath = path.join("public", "images", imageName);
-    await fs.unlink(imagePath);
+    const oldImage = await prisma.imageProduct.findMany({ where: { product_id: product.id } });
+    oldImage.forEach((image) => {
+      const imagePath = path.join("public", "images", image.image_url);
+      fs.unlink(imagePath);
+    })
     await prisma.imageProduct.deleteMany({ where: { product_id: product.id } });
 
     await prisma.products.delete({ where: { id: +req.params.id } });
