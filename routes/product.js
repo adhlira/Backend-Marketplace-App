@@ -120,9 +120,14 @@ router.post("/product", upload.array("images", 9), authorizePermission(Permissio
   });
 });
 
-router.put("/product/:id", authorizePermission(Permission.EDIT_PRODUCT), upload.single("image"), async (req, res) => {
-  const { category_id, name, price, quantity, description, size_id, color_id } = req.body;
+router.put("/product/:id", authorizePermission(Permission.EDIT_PRODUCT), upload.array("images", 9), async (req, res) => {
+  const { category_id, name, price, quantity, description, sizes, colors } = req.body;
   try {
+    const productExist = await prisma.products.findUnique({ where: { id: Number(req.params.id) } });
+    if (!productExist) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
     const product = await prisma.products.update({
       where: { id: +req.params.id },
       data: {
@@ -133,44 +138,41 @@ router.put("/product/:id", authorizePermission(Permission.EDIT_PRODUCT), upload.
         description: description,
       },
     });
-    const sizeId = await prisma.productSize.findFirst({ where: { product_id: product.id } });
-    await prisma.productSize.update({
-      where: {
-        product_id_size_id: {
-          product_id: product.id,
-          size_id: sizeId.size_id,
-        },
-      },
-      data: {
-        size_id: +size_id,
-      },
-    });
-    const colorId = await prisma.colorProduct.findFirst({ where: { product_id: product.id } });
-    await prisma.colorProduct.update({
-      where: {
-        product_id_color_id: {
-          product_id: product.id,
-          color_id: colorId.color_id,
-        },
-      },
-      data: {
-        color_id: +color_id,
-      },
-    });
-    const oldImage = await prisma.imageProduct.findFirst({ where: { product_id: +req.params.id } });
-    if (oldImage && req.file) {
-      const imageUrl = oldImage.image_url;
-      const imageName = path.basename(new URL(imageUrl).pathname);
-      const imagePath = path.join("public", "images", imageName);
-      await fs.unlink(imagePath);
-      await prisma.imageProduct.delete({ where: { product_id: +req.params.id } });
-      const image_url = `${req.protocol}://${req.get("host")}/public/images/${req.file.filename}`;
-      await prisma.imageProduct.create({
-        data: {
-          product_id: +product.id,
-          image_url: image_url,
-        },
+
+    if (sizes) {
+      const sizesArray = JSON.parse(sizes);
+      await prisma.productSize.deleteMany({ where: { product_id: +req.params.id } });
+      const productSize = sizesArray.map((size_id) => ({
+        product_id: Number(req.params.id),
+        size_id: Number(size_id),
+      }));
+      await prisma.productSize.createMany({ data: productSize });
+    }
+
+    if (colors) {
+      const colorsArray = JSON.parse(colors);
+      await prisma.colorProduct.deleteMany({ where: { product_id: +req.params.id } });
+      const colorsProduct = colorsArray.map((color_id) => ({
+        product_id: Number(req.params.id),
+        color_id: Number(color_id),
+      }));
+      await prisma.colorProduct.createMany({ data: colorsProduct });
+    }
+
+    if (req.files && req.files.length > 0) {
+      const oldImage = await prisma.imageProduct.findMany({ where: { product_id: Number(req.params.id) } });
+      oldImage.forEach((image) => {
+        const imagePath = path.join("public", "images", image.image_url);
+        fs.unlink(imagePath);
       });
+
+      await prisma.imageProduct.deleteMany({ where: { product_id: Number(req.params.id) } });
+      const imageUrl = req.files.map((file) => file.filename);
+      const imageProduct = imageUrl.map((image_url) => ({
+        product_id: Number(req.params.id),
+        image_url: image_url,
+      }));
+      await prisma.imageProduct.createMany({ data: imageProduct });
     }
     res.status(200).json({ message: "Updated Data Product successfully", product });
   } catch (error) {
