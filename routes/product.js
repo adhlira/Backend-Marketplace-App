@@ -5,6 +5,7 @@ import { authToken, authorizePermission } from "../authenticate_token.js";
 import upload from "../multer_config.js";
 import fs from "fs/promises";
 import path from "path";
+import { create } from "domain";
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -47,8 +48,8 @@ router.get("/products", authorizePermission(Permission.BROWSE_PRODUCT), async (r
   }
 });
 
-router.post("/product", upload.fields([{ name: "images", maxCount: 9 }]), authorizePermission(Permission.ADD_PRODUCT), async (req, res) => {
-  const { category_id, name, price, quantity, description, size_id, color_id } = req.body;
+router.post("/product", upload.array("images", 9), authorizePermission(Permission.ADD_PRODUCT), async (req, res) => {
+  const { category_id, name, price, quantity, description, sizes, colors } = req.body;
   const user = await prisma.tokens.findFirst({ where: { token: req.headers.authorization } });
   try {
     const product = await prisma.products.create({
@@ -62,19 +63,14 @@ router.post("/product", upload.fields([{ name: "images", maxCount: 9 }]), author
       },
     });
 
-    await prisma.productSize.create({
-      data: {
-        product_id: product.id,
-        size_id: +size_id,
-      },
-    });
+    const sizesArray = JSON.parse(sizes);
+    const colorsArray = JSON.parse(colors);
 
-    await prisma.colorProduct.create({
-      data: {
-        product_id: product.id,
-        color_id: +color_id,
-      },
-    });
+    const productSizes = sizesArray.map((size_id) => ({ product_id: +product.id, size_id }));
+    await prisma.productSize.createMany({ data: productSizes });
+
+    const colorsProduct = colorsArray.map((color_id) => ({ product_id: +product.id, color_id }));
+    await prisma.colorProduct.createMany({ data: colorsProduct });
 
     req.files.map(async (file) => {
       await prisma.imageProduct.createMany({
