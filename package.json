@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx nodemon server.js",
-    "seed" : "node ./seeder/categories_seeder.js && node ./seeder/size_seeder.js && node ./seeder/color_seeder.js"
+    "seed": "node ./seeder/categories_seeder.js && node ./seeder/size_seeder.js && node ./seeder/color_seeder.js && node ./seeder/permission_seeder.js && roles_seeder.js"
   },
   "type": "module",
   "keywords": [],
