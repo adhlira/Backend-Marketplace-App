@@ -5,7 +5,6 @@ import { authToken, authorizePermission } from "../authenticate_token.js";
 import upload from "../multer_config.js";
 import fs from "fs/promises";
 import path from "path";
-import { create } from "domain";
 
 const prisma = new PrismaClient();
 const router = Router();
