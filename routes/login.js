@@ -8,9 +8,13 @@ const router = Router();
 
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  const secret_key = "unitedfansclub"
+  const secret_key = "unitedfansclub";
 
   const user = await prisma.users.findUnique({ where: { email: email } });
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "This field is required" });
+  }
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(400).json({ message: "Email atau Password salah" });
