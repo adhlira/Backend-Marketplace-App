@@ -12,8 +12,16 @@ router.post("/login", async (req, res) => {
 
   const user = await prisma.users.findUnique({ where: { email: email } });
 
-  if (!email || !password) {
-    return res.status(400).json({ message: "This field is required" });
+  if (!email && !password) {
+    return res.status(400).json({ message: "Harap isi email dan password" });
+  }
+
+  if (!email) {
+    return res.status(400).json({ message: "Email tidak boleh kosong" });
+  }
+
+  if (!password) {
+    return res.status(400).json({ message: "Password tidak boleh kosong" });
   }
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
