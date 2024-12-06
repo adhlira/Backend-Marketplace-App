@@ -208,7 +208,7 @@ router.get("/products/user", authorizePermission(Permission.BROWSE_PRODUCT), asy
     if (products.length == 0) {
       res.status(404).json({ message: "Data Product is empty" });
     } else {
-      res.status(200).json({ message: "Data Product : ", products });
+      res.status(200).json(products);
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -259,7 +259,7 @@ router.delete("/product/:id", authorizePermission(Permission.DELETE_PRODUCT), as
     oldImage.forEach((image) => {
       const imagePath = path.join("public", "images", image.image_url);
       fs.unlink(imagePath);
-    })
+    });
     await prisma.imageProduct.deleteMany({ where: { product_id: product.id } });
 
     await prisma.products.delete({ where: { id: +req.params.id } });

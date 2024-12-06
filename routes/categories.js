@@ -11,7 +11,7 @@ router.use(authToken);
 router.get("/categories", authorizePermission(Permission.BROWSE_CATEGORIES), async (req, res) => {
   try {
     const categories = await prisma.categories.findMany();
-    res.status(200).json({ message: "Data categories : ", categories });
+    res.status(200).json(categories);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
