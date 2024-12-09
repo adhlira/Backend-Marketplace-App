@@ -48,7 +48,7 @@ router.get("/products", authorizePermission(Permission.BROWSE_PRODUCT), async (r
 });
 
 router.post("/product", upload.array("images", 9), authorizePermission(Permission.ADD_PRODUCT), async (req, res) => {
-  const { category_id, name, price, quantity, description, sizes, colors } = req.body;
+  const { category_id, name, price, stock, description, sizes, colors } = req.body;
   const user = await prisma.tokens.findFirst({ where: { token: req.headers.authorization } });
   try {
     const product = await prisma.products.create({
@@ -57,7 +57,6 @@ router.post("/product", upload.array("images", 9), authorizePermission(Permissio
         category_id: +category_id,
         name: name,
         price: +price,
-        quantity: +quantity,
         description: description,
       },
     });
@@ -68,7 +67,7 @@ router.post("/product", upload.array("images", 9), authorizePermission(Permissio
     const productSizes = sizesArray.map((size_id) => ({ product_id: +product.id, size_id }));
     await prisma.productSize.createMany({ data: productSizes });
 
-    const colorsProduct = colorsArray.map((color_id) => ({ product_id: +product.id, color_id }));
+    const colorsProduct = colorsArray.map((color_id) => ({ product_id: +product.id, color_id, stock }));
     await prisma.colorProduct.createMany({ data: colorsProduct });
 
     req.files.map(async (file) => {

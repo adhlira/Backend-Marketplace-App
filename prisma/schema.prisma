@@ -84,7 +84,6 @@ model Products {
   category_id Int
   name        String
   price       Float
-  quantity    Int
   description String   @db.Text
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
@@ -113,6 +112,7 @@ model ProductSize {
 model ColorProduct {
   product_id Int
   color_id   Int
+  stock      Int
 
   Products Products @relation(fields: [product_id], references: [id])
   Colors   Colors   @relation(fields: [color_id], references: [id])
