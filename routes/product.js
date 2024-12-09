@@ -67,7 +67,7 @@ router.post("/product", upload.array("images", 9), authorizePermission(Permissio
     const productSizes = sizesArray.map((size_id) => ({ product_id: +product.id, size_id }));
     await prisma.productSize.createMany({ data: productSizes });
 
-    const colorsProduct = colorsArray.map((color_id) => ({ product_id: +product.id, color_id, stock }));
+    const colorsProduct = colorsArray.map(({ color_id, stock }) => ({ product_id: +product.id, color_id, stock }));
     await prisma.colorProduct.createMany({ data: colorsProduct });
 
     req.files.map(async (file) => {
