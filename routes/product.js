@@ -185,11 +185,15 @@ router.get("/products/user", authorizePermission(Permission.BROWSE_PRODUCT), asy
     const products = await prisma.products.findMany({
       where: { user_id: user.user_id },
       include: {
+        Categories: {
+          select: { name: true },
+        },
         ColorProduct: {
           select: {
             Colors: {
               select: { name: true },
             },
+            stock: true,
           },
         },
         ProductSize: {
@@ -204,10 +208,17 @@ router.get("/products/user", authorizePermission(Permission.BROWSE_PRODUCT), asy
         },
       },
     });
+    const productsWithImageUrl = products.map((product) => ({
+      ...product,
+      ImageProduct: product.ImageProduct.map((image) => ({
+        ...image,
+        image_url: `http://localhost:3000/images/${image.image_url}`, // Prefix URL
+      })),
+    }));
     if (products.length == 0) {
       res.status(404).json({ message: "Data Product is empty" });
     } else {
-      res.status(200).json(products);
+      res.status(200).json(productsWithImageUrl);
     }
   } catch (error) {
     res.status(500).json({ error: error.message });

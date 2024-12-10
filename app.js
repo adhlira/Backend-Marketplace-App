@@ -24,6 +24,7 @@ app.use(function (req, res, next) {
 
 app.options("*", cors());
 app.use(express.json());
+app.use("/images", express.static("public/images"));
 app.use(sign_up_route);
 app.use(login_route);
 app.use(product_route);
