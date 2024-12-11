@@ -258,6 +258,52 @@ router.get("/products-category/:id", authorizePermission(Permission.BROWSE_PRODU
   }
 });
 
+router.get("/product/user/:id", authorizePermission(Permission.READ_PRODUCT), async (req, res) => {
+  const id = +req.params.id;
+  const user = await prisma.tokens.findFirst({ where: { token: req.headers.authorization } });
+  const product = await prisma.products.findFirst({
+    where: { id: id },
+    include: {
+      ColorProduct: {
+        select: {
+          Colors: {
+            select: { name: true },
+          },
+          stock: true,
+        },
+      },
+      ProductSize: {
+        select: {
+          Sizes: {
+            select: { name: true },
+          },
+        },
+      },
+      ImageProduct: {
+        select: { image_url: true },
+      },
+    },
+  });
+  const productsWithImageUrl = {
+    ...product,
+    ImageProduct: product.ImageProduct.map((image) => ({
+      ...image,
+      image_url: `https://localhost:3000/images/${image.image_url}`,
+    })),
+  };
+  try {
+    if (isNaN(id)) {
+      res.status(400).json({ message: "ID tidak diketahui" });
+    } else if (!product) {
+      res.status(404).json({ message: "Product tidak ditemukan" });
+    } else {
+      res.status(200).json(productsWithImageUrl);
+    }
+  } catch (error) {
+    res.status(500).json("Terjadi kesalahan", error);
+  }
+});
+
 router.delete("/product/:id", authorizePermission(Permission.DELETE_PRODUCT), async (req, res) => {
   try {
     const product = await prisma.products.findFirst({ where: { id: +req.params.id } });
