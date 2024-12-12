@@ -61,19 +61,19 @@ model Categories {
 }
 
 model Sizes {
-  id          Int           @id @default(autoincrement())
-  name        String        @unique
-  ProductSize ProductSize[]
-  Cart        Cart[]
+  id            Int             @id @default(autoincrement())
+  name          String          @unique
+  Cart          Cart[]
+  DetailProduct DetailProduct[]
 
   @@map("sizes")
 }
 
 model Colors {
-  id           Int            @id @default(autoincrement())
-  name         String
-  ColorProduct ColorProduct[]
-  Cart         Cart[]
+  id            Int             @id @default(autoincrement())
+  name          String
+  Cart          Cart[]
+  DetailProduct DetailProduct[]
 
   @@map("colors")
 }
@@ -88,37 +88,27 @@ model Products {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  Users        Users          @relation(fields: [user_id], references: [id])
-  Categories   Categories     @relation(fields: [category_id], references: [id])
-  ProductSize  ProductSize[]
-  ColorProduct ColorProduct[]
-  ImageProduct ImageProduct[]
-  Cart         Cart[]
+  Users         Users           @relation(fields: [user_id], references: [id])
+  Categories    Categories      @relation(fields: [category_id], references: [id])
+  ImageProduct  ImageProduct[]
+  Cart          Cart[]
+  DetailProduct DetailProduct[]
 
   @@map("products")
 }
 
-model ProductSize {
+model DetailProduct {
   product_id Int
   size_id    Int
-
-  Products Products @relation(fields: [product_id], references: [id])
-  Sizes    Sizes    @relation(fields: [size_id], references: [id])
-
-  @@id([product_id, size_id])
-  @@map("product_size")
-}
-
-model ColorProduct {
-  product_id Int
   color_id   Int
   stock      Int
 
   Products Products @relation(fields: [product_id], references: [id])
+  Sizes    Sizes    @relation(fields: [size_id], references: [id])
   Colors   Colors   @relation(fields: [color_id], references: [id])
 
-  @@id([product_id, color_id])
-  @@map("color_product")
+  @@id([product_id, size_id, color_id])
+  @@map("detail_product")
 }
 
 model ImageProduct {
