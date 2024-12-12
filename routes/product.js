@@ -48,7 +48,7 @@ router.get("/products", authorizePermission(Permission.BROWSE_PRODUCT), async (r
 });
 
 router.post("/product", upload.array("images", 9), authorizePermission(Permission.ADD_PRODUCT), async (req, res) => {
-  const { category_id, name, price, stock, description, sizes, colors } = req.body;
+  const { category_id, name, price, description, detail_product } = req.body;
   const user = await prisma.tokens.findFirst({ where: { token: req.headers.authorization } });
   try {
     const product = await prisma.products.create({
@@ -61,14 +61,10 @@ router.post("/product", upload.array("images", 9), authorizePermission(Permissio
       },
     });
 
-    const sizesArray = JSON.parse(sizes);
-    const colorsArray = JSON.parse(colors);
+    const detailProductArray = JSON.parse(detail_product);
 
-    const productSizes = sizesArray.map((size_id) => ({ product_id: +product.id, size_id }));
-    await prisma.productSize.createMany({ data: productSizes });
-
-    const colorsProduct = colorsArray.map(({ color_id, stock }) => ({ product_id: +product.id, color_id, stock }));
-    await prisma.colorProduct.createMany({ data: colorsProduct });
+    const detailProduct = detailProductArray.map(({ size_id, color_id, stock }) => ({ product_id: +product.id, size_id, color_id, stock }));
+    await prisma.detailProduct.createMany({ data: detailProduct });
 
     req.files.map(async (file) => {
       await prisma.imageProduct.createMany({
@@ -188,19 +184,15 @@ router.get("/products/user", authorizePermission(Permission.BROWSE_PRODUCT), asy
         Categories: {
           select: { name: true },
         },
-        ColorProduct: {
+        DetailProduct: {
           select: {
             Colors: {
               select: { name: true },
             },
-            stock: true,
-          },
-        },
-        ProductSize: {
-          select: {
             Sizes: {
               select: { name: true },
             },
+            stock: true,
           },
         },
         ImageProduct: {
@@ -260,23 +252,18 @@ router.get("/products-category/:id", authorizePermission(Permission.BROWSE_PRODU
 
 router.get("/product/user/:id", authorizePermission(Permission.READ_PRODUCT), async (req, res) => {
   const id = +req.params.id;
-  const user = await prisma.tokens.findFirst({ where: { token: req.headers.authorization } });
   const product = await prisma.products.findFirst({
     where: { id: id },
     include: {
-      ColorProduct: {
-        select: {
-          Colors: {
-            select: { name: true },
-          },
-          stock: true,
-        },
-      },
-      ProductSize: {
+      DetailProduct: {
         select: {
           Sizes: {
             select: { name: true },
           },
+          Colors: {
+            select: { name: true },
+          },
+          stock: true,
         },
       },
       ImageProduct: {
