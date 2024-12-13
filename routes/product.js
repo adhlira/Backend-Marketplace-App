@@ -255,6 +255,9 @@ router.get("/product/user/:id", authorizePermission(Permission.READ_PRODUCT), as
   const product = await prisma.products.findFirst({
     where: { id: id },
     include: {
+      Categories: {
+        select: { name: true },
+      },
       DetailProduct: {
         select: {
           Sizes: {
@@ -275,7 +278,7 @@ router.get("/product/user/:id", authorizePermission(Permission.READ_PRODUCT), as
     ...product,
     ImageProduct: product.ImageProduct.map((image) => ({
       ...image,
-      image_url: `https://localhost:3000/images/${image.image_url}`,
+      image_url: `http://localhost:3000/images/${image.image_url}`,
     })),
   };
   try {
